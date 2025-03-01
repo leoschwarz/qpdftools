@@ -1,0 +1,15 @@
+# app.rc Instructions
+
+## Objective
+Create a Windows resource file (app.rc) for the QPDFTools application.
+
+## Implementation Details
+- Define the application icon
+- Define version information for the application
+- Include Windows-specific resource information
+
+## Dependencies
+- Windows icon file (app.ico)
+
+## Expected Result
+A Windows resource file that defines the application icon and version information for Windows builds.

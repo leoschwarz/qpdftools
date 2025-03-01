@@ -1,0 +1,11 @@
+# Placeholder for app.ico
+
+This file is a placeholder for the actual app.ico file that needs to be generated from the SVG icon.
+
+To generate the actual icon file, use an SVG to ICO converter tool or online service. For example, using ImageMagick:
+
+```
+convert resources/icons/sc-apps-br.eng.silas.qpdftools.svg -define icon:auto-resize=16,32,48,64,128,256 resources/windows/app.ico
+```
+
+The actual app.ico file should replace this placeholder file.

@@ -1,0 +1,18 @@
+# externalSoftware.cpp Instructions
+
+## Objective
+Implement the platform-specific path handling method in the ExternalSoftware class.
+
+## Changes Required
+1. Implement the getPlatformSpecificPath() method
+
+## Implementation Details
+- Implement the getPlatformSpecificPath() method to return the appropriate command path based on the platform
+- On Windows, look for the executable in the deps directory next to the application
+- On other platforms, just use the base command
+
+## Dependencies
+- externalSoftware.hpp
+
+## Expected Result
+An updated ExternalSoftware implementation that supports platform-specific path handling.

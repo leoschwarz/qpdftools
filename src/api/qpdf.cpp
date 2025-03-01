@@ -1,6 +1,8 @@
 #include "qpdf.hpp"
 
-Qpdf::Qpdf() : ExternalSoftware("qpdf", "qpdf") {}
+Qpdf::Qpdf()
+    : ExternalSoftware("qpdf",
+                      getPlatformSpecificPath("qpdf", "qpdf/bin/qpdf.exe")) {}
 
 void Qpdf::splitPDF(const QString &input, const QString &outputFolder) {
   // qpdf in.pdf out.pdf --split-pages

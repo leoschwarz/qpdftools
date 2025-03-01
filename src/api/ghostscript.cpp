@@ -1,6 +1,8 @@
 #include "ghostscript.hpp"
 
-Ghostscript::Ghostscript() : ExternalSoftware("Ghostscript", "gs") {}
+Ghostscript::Ghostscript()
+    : ExternalSoftware("Ghostscript",
+                      getPlatformSpecificPath("gs", "ghostscript/bin/gswin64c.exe")) {}
 
 void Ghostscript::compressPDF(const QString &input, const QString &output, CompressionMode mode) {
   QStringList arguments;

@@ -1,0 +1,17 @@
+# externalSoftware.hpp Instructions
+
+## Objective
+Update the ExternalSoftware class to add platform-specific path handling.
+
+## Changes Required
+1. Add a new static method for platform-specific path handling
+
+## Implementation Details
+- Add a static method getPlatformSpecificPath() that returns the appropriate command path based on the platform
+- The method should take parameters for the base command and Windows-specific executable name
+
+## Dependencies
+- None
+
+## Expected Result
+An updated ExternalSoftware class that supports platform-specific path handling.

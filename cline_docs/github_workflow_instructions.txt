@@ -1,0 +1,16 @@
+# GitHub Actions Workflow Instructions
+
+## Objective
+Create a GitHub Actions workflow for building QPDFTools on Windows and Linux.
+
+## Implementation Details
+- Create a workflow that builds QPDFTools on Windows and Linux
+- Set up the necessary dependencies for each platform
+- Create packages for each platform
+- Upload the build artifacts
+
+## Dependencies
+- None
+
+## Expected Result
+A GitHub Actions workflow that builds QPDFTools on Windows and Linux.

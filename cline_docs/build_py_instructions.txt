@@ -1,0 +1,16 @@
+# build.py Instructions
+
+## Objective
+Create a cross-platform build script for QPDFTools.
+
+## Implementation Details
+- Create a Python script that can build QPDFTools on both Windows and Linux
+- Support different build types (debug, release)
+- Support creating packages (installer, portable)
+- Handle platform-specific configuration
+
+## Dependencies
+- None
+
+## Expected Result
+A Python script that can be used to build QPDFTools on different platforms.

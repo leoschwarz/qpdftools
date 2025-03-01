@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QException>
 #include <QProcess>
+#include <QCoreApplication>
+#include <QDir>
 
 class ExternalSoftware {
 protected:
@@ -13,4 +15,7 @@ protected:
 
 public:
   ExternalSoftware(QString name, QString command);
+  
+  // New method to get platform-specific command path
+  static QString getPlatformSpecificPath(const QString &baseCommand, const QString &windowsExeName);
 };
