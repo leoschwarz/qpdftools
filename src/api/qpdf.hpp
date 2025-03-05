@@ -14,4 +14,4 @@ public:
   void rotatePDF(const QString &input, const QString &output, int angle);
 };
 
-extern Qpdf qpdf;
+extern Qpdf& qpdf;
