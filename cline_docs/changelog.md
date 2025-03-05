@@ -1,4 +1,4 @@
-# QPDFTools Windows Build Implementation - Changelog
+# QPDFTools Cross-Platform Build Implementation - Changelog
 
 ## [Unreleased]
 ### Added
@@ -27,10 +27,13 @@
 - Fixed Windows build compatibility issue with Qt::ColorScheme by adding a fallback implementation for Qt 6.2.4
 - Fixed Windows build failure in GitHub Actions by adding automatic generation of app.ico from SVG source
 - Simplified GitHub Actions workflow by removing ImageMagick dependency and using pre-generated icon file
+- Fixed Linux build in GitHub Actions by updating the workflow to use Qt6 instead of Qt5
 
 ### Issues
 - Identified issue with Windows build in GitHub Actions: windeployqt tool fails with "Unknown option 'no-angle'" error
 - Fixed windeployqt error by explicitly removing the unsupported `--no-angle` option and adding a comment explaining the removal
+- Identified issue with Linux build in GitHub Actions: CMake couldn't find Qt6 because the workflow was installing Qt5
+- Fixed Linux build by updating the GitHub Actions workflow to use the jurplel/install-qt-action@v3 action with Qt6
 
 ## [Future Improvements]
 - ✅ Replace the placeholder icon file with an actual ICO file (now pre-generated and committed to repository)

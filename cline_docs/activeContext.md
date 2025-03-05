@@ -1,7 +1,7 @@
-# QPDFTools Windows Build Implementation - Active Context
+# QPDFTools Cross-Platform Build Implementation - Active Context
 
 ## Current Work Focus
-Optimizing the Windows build process and simplifying the GitHub Actions workflow.
+Optimizing the cross-platform build process and fixing GitHub Actions workflow issues.
 
 ## Recent Decisions
 - Created CRCT system files to track the implementation process
@@ -18,6 +18,7 @@ Optimizing the Windows build process and simplifying the GitHub Actions workflow
 - Created a bash script to generate Windows icon file from SVG source
 - Generated and committed Windows icon file to simplify the build process
 - Simplified GitHub Actions workflow by removing ImageMagick dependency
+- Fixed Linux build in GitHub Actions by updating to use Qt6 instead of Qt5
 
 ## Immediate Priorities
 1. ✅ Update CMake configuration files
@@ -59,7 +60,9 @@ We've optimized the Windows build process by creating a bash script (`generate_i
 
 ## Next Steps
 1. ✅ Fix the windeployqt error with the `--no-angle` option in GitHub Actions
-2. Test the Windows build process
-3. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
-4. Consider adding more features to the build script as needed
-5. Test the cross-compilation process using the provided guide
+2. ✅ Fix the Linux build in GitHub Actions to use Qt6 instead of Qt5
+3. Test the Windows build process
+4. Test the Linux build process
+5. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
+6. Consider adding more features to the build script as needed
+7. Test the cross-compilation process using the provided guide

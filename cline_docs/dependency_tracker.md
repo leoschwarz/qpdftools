@@ -1,4 +1,4 @@
-# QPDFTools Windows Build Implementation - Dependency Tracker
+# QPDFTools Cross-Platform Build Implementation - Dependency Tracker
 
 ## Key Definitions
 0A: / (project root)

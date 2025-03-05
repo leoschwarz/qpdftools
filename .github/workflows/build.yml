@@ -66,10 +66,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.2.4'
+          host: 'linux'
+          target: 'desktop'
+          # The qtbase module (which includes Widgets and Concurrent) is installed by default
+      
+      - name: Install Additional Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake extra-cmake-modules qtbase5-dev libqt5concurrent5 qt5-qmake qttools5-dev-tools ghostscript qpdf
+          sudo apt-get install -y build-essential cmake extra-cmake-modules ghostscript qpdf
       
       - name: Build
         run: |
