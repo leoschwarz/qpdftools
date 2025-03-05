@@ -1,7 +1,7 @@
 # QPDFTools Windows Build Implementation - Active Context
 
 ## Current Work Focus
-Implementing Windows build support for QPDFTools - completed all implementation steps.
+Fixing GitHub Actions Windows build issues and implementing cross-compilation from Linux to Windows.
 
 ## Recent Decisions
 - Created CRCT system files to track the implementation process
@@ -12,6 +12,8 @@ Implementing Windows build support for QPDFTools - completed all implementation 
 - Created dependencies directory structure for Windows builds
 - Created build automation script for cross-platform builds
 - Set up CI/CD for Windows builds using GitHub Actions
+- Fixed GitHub Actions workflow by removing incorrect Qt module specifications
+- Created a guide for cross-compiling from Linux to Windows
 
 ## Immediate Priorities
 1. ✅ Update CMake configuration files
@@ -34,11 +36,18 @@ Implementing Windows build support for QPDFTools - completed all implementation 
    - ✅ Make the script executable
 6. ✅ Set up CI/CD for Windows builds
    - ✅ Create GitHub Actions workflow for Windows builds
+7. ✅ Fix GitHub Actions build issues
+   - ✅ Fix Qt module specification in GitHub Actions workflow
+8. ✅ Create cross-compilation guide
+   - ✅ Document MXE-based cross-compilation
+   - ✅ Document Docker-based cross-compilation
+   - ✅ Document MinGW-based cross-compilation
 
 ## Current State
-The project has completed the implementation of Windows build support. All the required changes have been made to support Windows builds, including CMake configuration updates, Windows-specific resources, external tool handling updates, dependencies directory structure, build automation script, and CI/CD configuration.
+The project has completed the implementation of Windows build support. All the required changes have been made to support Windows builds, including CMake configuration updates, Windows-specific resources, external tool handling updates, dependencies directory structure, build automation script, and CI/CD configuration. The GitHub Actions workflow has been fixed to correctly specify Qt modules, and a comprehensive guide for cross-compiling from Linux to Windows has been created.
 
 ## Next Steps
 1. Test the Windows build process
 2. Update the actual icon file (app.ico) from the SVG source
 3. Consider adding more features to the build script as needed
+4. Test the cross-compilation process using the provided guide

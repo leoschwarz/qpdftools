@@ -25,7 +25,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
-          modules: 'qtwidgets qtconcurrent'
+          # The qtbase module (which includes Widgets and Concurrent) is installed by default
       
       - name: Download Ghostscript
         run: |
