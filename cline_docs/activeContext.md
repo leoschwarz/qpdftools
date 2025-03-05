@@ -39,13 +39,14 @@ Fixing GitHub Actions Windows build issues and implementing cross-compilation fr
    - ✅ Create GitHub Actions workflow for Windows builds
 7. ✅ Fix GitHub Actions build issues
    - ✅ Fix Qt module specification in GitHub Actions workflow
+   - ✅ Fix Qt::ColorScheme compatibility issue for Qt 6.2.4
 8. ✅ Create cross-compilation guide
    - ✅ Document MXE-based cross-compilation
    - ✅ Document Docker-based cross-compilation
    - ✅ Document MinGW-based cross-compilation
 
 ## Current State
-The project has completed the implementation of Windows build support. All the required changes have been made to support Windows builds, including CMake configuration updates, Windows-specific resources, external tool handling updates, dependencies directory structure, build automation script, and CI/CD configuration. The GitHub Actions workflow has been fixed to correctly specify Qt modules, and a comprehensive guide for cross-compiling from Linux to Windows has been created.
+The project has completed the implementation of Windows build support. All the required changes have been made to support Windows builds, including CMake configuration updates, Windows-specific resources, external tool handling updates, dependencies directory structure, build automation script, and CI/CD configuration. The GitHub Actions workflow has been fixed to correctly specify Qt modules, and a comprehensive guide for cross-compiling from Linux to Windows has been created. Additionally, a compatibility fix for Qt::ColorScheme has been implemented to ensure the Windows build works correctly with Qt 6.2.4.
 
 ## Next Steps
 1. Test the Windows build process
