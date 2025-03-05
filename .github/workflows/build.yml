@@ -50,6 +50,22 @@ jobs:
           $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
           # Set Qt6_DIR for the build script to find windeployqt
           $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
+          
+          # Debug: Check if Qt bin directory exists and list its contents
+          Write-Host "Checking Qt installation paths:"
+          if (Test-Path "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin") {
+            Write-Host "Found Qt at $env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
+          } else {
+            Write-Host "Qt bin directory not found at expected location"
+            # Check alternate location
+            if (Test-Path "/Qt/6.2.4/msvc2019_64/bin") {
+              Write-Host "Found Qt at /Qt/6.2.4/msvc2019_64/bin"
+              $env:PATH = "/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
+              $env:Qt6_DIR = "/Qt/6.2.4/msvc2019_64/bin"
+            }
+          }
+          
+          # Run the build
           python build.py --platform windows --type release
       
       - name: Create Package
@@ -58,6 +74,24 @@ jobs:
           $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
           # Set Qt6_DIR for the build script to find windeployqt
           $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
+          
+          # Debug: List Qt directory contents to verify windeployqt location
+          Write-Host "Checking Qt bin directory contents:"
+          if (Test-Path "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin") {
+            Get-ChildItem "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin" | Where-Object { $_.Name -like "*deploy*" } | ForEach-Object { Write-Host $_.FullName }
+          } else {
+            Write-Host "Qt bin directory not found at expected location"
+            # Try alternate location based on jurplel/install-qt-action
+            if (Test-Path "/Qt/6.2.4/msvc2019_64/bin") {
+              Write-Host "Found alternate Qt bin directory at /Qt/6.2.4/msvc2019_64/bin"
+              Get-ChildItem "/Qt/6.2.4/msvc2019_64/bin" | Where-Object { $_.Name -like "*deploy*" } | ForEach-Object { Write-Host $_.FullName }
+              # Add alternate path to PATH
+              $env:PATH = "/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
+              $env:Qt6_DIR = "/Qt/6.2.4/msvc2019_64/bin"
+            }
+          }
+          
+          # Run the build script with package and portable options
           python build.py --platform windows --type release --package --portable
       
       - name: Upload Artifacts

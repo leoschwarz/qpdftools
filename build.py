@@ -104,28 +104,54 @@ def main():
                     
                     if exe_path:
                         # Run windeployqt on the installed executable to ensure all Qt dependencies are copied
-                        qt_bin_dir = os.environ.get('Qt6_DIR', '')
-                        if not qt_bin_dir:
-                            # Try to find Qt bin directory from PATH
-                            for path_dir in os.environ.get('PATH', '').split(os.pathsep):
-                                if os.path.exists(os.path.join(path_dir, 'windeployqt.exe')):
-                                    qt_bin_dir = path_dir
+                        # First, try to find windeployqt directly in PATH
+                        windeployqt_path = None
+                        
+                        # Check if we're in GitHub Actions environment
+                        if 'IQTA_TOOLS' in os.environ:
+                            # GitHub Actions specific path
+                            possible_paths = [
+                                os.path.join(os.environ.get('IQTA_TOOLS', ''), 'Qt', '6.2.4', 'msvc2019_64', 'bin', 'windeployqt.exe'),
+                                '/Qt/6.2.4/msvc2019_64/bin/windeployqt.exe'  # Alternate path format seen in logs
+                            ]
+                            for path in possible_paths:
+                                if os.path.exists(path):
+                                    windeployqt_path = path
                                     break
                         
-                        if qt_bin_dir:
-                            windeployqt_cmd = [os.path.join(qt_bin_dir, 'windeployqt.exe'),
-                                              '--verbose', '0',
-                                              '--no-compiler-runtime',
-                                              '--no-opengl-sw',
-                                              exe_path]
+                        # If not found in GitHub Actions paths, try Qt6_DIR
+                        if not windeployqt_path:
+                            qt_bin_dir = os.environ.get('Qt6_DIR', '')
+                            if qt_bin_dir and os.path.exists(os.path.join(qt_bin_dir, 'windeployqt.exe')):
+                                windeployqt_path = os.path.join(qt_bin_dir, 'windeployqt.exe')
+                        
+                        # If still not found, search in PATH
+                        if not windeployqt_path:
+                            for path_dir in os.environ.get('PATH', '').split(os.pathsep):
+                                if os.path.exists(os.path.join(path_dir, 'windeployqt.exe')):
+                                    windeployqt_path = os.path.join(path_dir, 'windeployqt.exe')
+                                    break
+                        
+                        if windeployqt_path:
+                            print(f"Found windeployqt at: {windeployqt_path}")
+                            windeployqt_cmd = [
+                                windeployqt_path,
+                                '--verbose', '0',
+                                '--no-compiler-runtime',
+                                '--no-opengl-sw',
+                                exe_path
+                            ]
                             print('Running:', ' '.join(windeployqt_cmd))
                             try:
                                 subprocess.run(windeployqt_cmd, check=True)
                                 print("Successfully deployed Qt dependencies")
-                            except subprocess.CalledProcessError:
-                                print("Warning: Failed to run windeployqt, Qt dependencies may be missing")
+                            except subprocess.CalledProcessError as e:
+                                print(f"Warning: Failed to run windeployqt: {e}")
+                                print("Qt dependencies may be missing")
                         else:
                             print("Warning: Could not find windeployqt.exe, Qt dependencies may be missing")
+                            print("PATH environment variable:", os.environ.get('PATH', ''))
+                            print("Qt6_DIR environment variable:", os.environ.get('Qt6_DIR', ''))
                 
                 zip_name = f'qpdftools-{target_platform}-portable.zip'
                 with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:

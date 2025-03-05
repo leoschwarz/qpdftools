@@ -70,8 +70,9 @@ These changes ensure that all required Qt DLLs are properly included in both the
 1. ✅ Fix the windeployqt error with the `--no-angle` option in GitHub Actions
 2. ✅ Fix the Linux build in GitHub Actions to use Qt6 instead of Qt5
 3. ✅ Fix Windows build issue with missing Qt6Core.dll
-4. Test the Windows build process with the updated Qt dependency deployment
-5. Test the Linux build process
-6. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
-7. Consider adding more features to the build script as needed
-8. Test the cross-compilation process using the provided guide
+4. ✅ Fix Windows build issue with windeployqt path detection in GitHub Actions
+5. Test the Windows build process with the updated Qt dependency deployment
+6. Test the Linux build process
+7. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
+8. Consider adding more features to the build script as needed
+9. Test the cross-compilation process using the provided guide
