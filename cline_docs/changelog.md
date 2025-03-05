@@ -19,15 +19,17 @@
 ### Fixed
 - Fixed GitHub Actions workflow by removing incorrect Qt module specifications that were causing build failures
 - Fixed Windows build compatibility issue with Qt::ColorScheme by adding a fallback implementation for Qt 6.2.4
+- Fixed Windows build failure in GitHub Actions by adding automatic generation of app.ico from SVG source
 
 ### Added
 - Created comprehensive guide for cross-compiling from Linux to Windows (windows_cross_compile.md)
   - Documented MXE-based cross-compilation method
   - Documented Docker-based cross-compilation method
   - Documented MinGW-based cross-compilation method
+- Added automatic icon generation step to GitHub Actions workflow using ImageMagick
 
 ## [Future Improvements]
-- Replace the placeholder icon file with an actual ICO file
+- ✅ Replace the placeholder icon file with an actual ICO file (now automated in CI)
 - Add more features to the build script as needed
 - Improve CI/CD workflow with additional testing steps
 - Test and refine the cross-compilation process

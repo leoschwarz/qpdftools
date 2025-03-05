@@ -41,6 +41,21 @@ jobs:
           mkdir -p deps/qpdf/bin
           Copy-Item "C:\qpdf\qpdf-10.6.3\bin\*" -Destination "deps/qpdf/bin" -Recurse
       
+      - name: Install ImageMagick
+        run: |
+          Invoke-WebRequest -Uri "https://imagemagick.org/archive/binaries/ImageMagick-7.1.1-29-Q16-HDRI-x64-dll.exe" -OutFile "imagemagick-installer.exe"
+          Start-Process -FilePath "imagemagick-installer.exe" -ArgumentList "/SILENT /SP- /NORESTART" -Wait
+      
+      - name: Generate Windows Icon
+        run: |
+          # Create app.ico from SVG
+          & "C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe" convert resources/icons/sc-apps-br.eng.silas.qpdftools.svg -define icon:auto-resize=16,32,48,64,128,256 resources/windows/app.ico
+          # Verify the icon was created
+          if (-Not (Test-Path resources/windows/app.ico)) {
+            Write-Error "Failed to generate app.ico"
+            exit 1
+          }
+      
       - name: Build
         run: |
           python build.py --platform windows --type release
