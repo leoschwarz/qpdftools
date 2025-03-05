@@ -40,6 +40,12 @@
   - Enhancing build.py to run windeployqt on the installed executable when creating a portable package
   - Modifying src/CMakeLists.txt to run windeployqt during both post-build and installation
   - Updating GitHub workflow to ensure Qt bin directory is in PATH and setting Qt6_DIR environment variable
+- Identified issue with Windows build in GitHub Actions: build fails with "FileNotFoundError" when trying to run windeployqt.exe
+- Fixed windeployqt path detection issue by:
+  - Enhancing build.py to search for windeployqt.exe in multiple possible locations, including GitHub Actions-specific paths
+  - Adding detailed error reporting and path debugging to help diagnose path-related issues
+  - Updating GitHub Actions workflow to include diagnostic steps that verify Qt installation paths
+  - Adding support for alternate path formats that appear in GitHub Actions logs
 
 ## [Future Improvements]
 - ✅ Replace the placeholder icon file with an actual ICO file (now pre-generated and committed to repository)

@@ -66,6 +66,15 @@ We've fixed a critical issue with the Windows build where the application was fa
 
 These changes ensure that all required Qt DLLs are properly included in both the installer and portable packages, fixing the "Qt6Core.dll not found" error.
 
+We've now fixed another critical issue with the Windows build in GitHub Actions where the build was failing with a "FileNotFoundError" when trying to run windeployqt.exe. The issue was that the build.py script couldn't find the windeployqt executable in the expected location. We've made the following improvements:
+
+1. Enhanced the build.py script to search for windeployqt.exe in multiple possible locations, including GitHub Actions-specific paths.
+2. Added detailed error reporting and path debugging to help diagnose path-related issues.
+3. Updated the GitHub Actions workflow to include diagnostic steps that verify the Qt installation paths and list the contents of the Qt bin directory.
+4. Added support for an alternate path format (/Qt/6.2.4/msvc2019_64/bin) that appears in the GitHub Actions logs.
+
+These changes make the build process more robust by improving the detection of the windeployqt tool, especially in the GitHub Actions environment where paths may differ from local development environments.
+
 ## Next Steps
 1. ✅ Fix the windeployqt error with the `--no-angle` option in GitHub Actions
 2. ✅ Fix the Linux build in GitHub Actions to use Qt6 instead of Qt5
