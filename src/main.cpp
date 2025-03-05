@@ -27,8 +27,14 @@ int main(int argc, char *argv[]) {
   Qt::ColorScheme colorScheme = getColorScheme(app.palette().window().color().value(),
                                                app.palette().windowText().color().value());
   QString fallbackIcons =
-      colorScheme == Qt::ColorScheme::Dark ? ":fallback-icons-dark" : ":fallback-icons-light";
+      colorScheme == Qt::ColorScheme::Dark ? ":/fallback-icons-dark" : ":/fallback-icons-light";
   QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << fallbackIcons);
+  
+  // On Windows, we need to explicitly set the theme icons since Windows doesn't have a standard icon theme
+#ifdef _WIN32
+  QIcon::setThemeName("fallback");
+  QIcon::setThemeSearchPaths(QStringList() << ":/");
+#endif
 
   // Enable Translations for other languages
   // Search available translations with this format :/i18n/qpdftools_pt_BR.qm

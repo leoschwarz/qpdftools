@@ -53,4 +53,11 @@ void Qpdf::rotatePDF(const QString &input, const QString &output, int angle) {
   run(arguments);
 }
 
-Qpdf qpdf;
+// Create a global instance but initialize it lazily
+Qpdf& getQpdfInstance() {
+  static Qpdf instance;
+  return instance;
+}
+
+// Global reference to the singleton instance
+Qpdf& qpdf = getQpdfInstance();
