@@ -89,6 +89,44 @@ def main():
             if args.portable:
                 # Create ZIP archive for portable use
                 import zipfile
+                
+                # For Windows, make sure Qt DLLs are included
+                if target_platform == 'windows':
+                    # Find the executable in the dist directory
+                    exe_path = None
+                    for root, _, files in os.walk(dist_dir):
+                        for file in files:
+                            if file.endswith('.exe'):
+                                exe_path = os.path.join(root, file)
+                                break
+                        if exe_path:
+                            break
+                    
+                    if exe_path:
+                        # Run windeployqt on the installed executable to ensure all Qt dependencies are copied
+                        qt_bin_dir = os.environ.get('Qt6_DIR', '')
+                        if not qt_bin_dir:
+                            # Try to find Qt bin directory from PATH
+                            for path_dir in os.environ.get('PATH', '').split(os.pathsep):
+                                if os.path.exists(os.path.join(path_dir, 'windeployqt.exe')):
+                                    qt_bin_dir = path_dir
+                                    break
+                        
+                        if qt_bin_dir:
+                            windeployqt_cmd = [os.path.join(qt_bin_dir, 'windeployqt.exe'),
+                                              '--verbose', '0',
+                                              '--no-compiler-runtime',
+                                              '--no-opengl-sw',
+                                              exe_path]
+                            print('Running:', ' '.join(windeployqt_cmd))
+                            try:
+                                subprocess.run(windeployqt_cmd, check=True)
+                                print("Successfully deployed Qt dependencies")
+                            except subprocess.CalledProcessError:
+                                print("Warning: Failed to run windeployqt, Qt dependencies may be missing")
+                        else:
+                            print("Warning: Could not find windeployqt.exe, Qt dependencies may be missing")
+                
                 zip_name = f'qpdftools-{target_platform}-portable.zip'
                 with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, _, files in os.walk(dist_dir):

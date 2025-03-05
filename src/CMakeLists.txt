@@ -65,6 +65,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
   
   find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+  
+  # Run windeployqt as a post-build step
   add_custom_command(TARGET qpdftools POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E
     env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
@@ -72,6 +74,23 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     --no-compiler-runtime
     --no-opengl-sw
     \"$<TARGET_FILE:qpdftools>\"
-    COMMENT "Running windeployqt..."
+    COMMENT "Running windeployqt for build directory..."
   )
+  
+  # Run windeployqt during installation to ensure Qt DLLs are included in the package
+  install(CODE "
+    set(ENV{PATH} \"${_qt_bin_dir};\$ENV{PATH}\")
+    execute_process(
+      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        --verbose 0
+        --no-compiler-runtime
+        --no-opengl-sw
+        --dir \"\${CMAKE_INSTALL_PREFIX}\"
+        \"\${CMAKE_INSTALL_PREFIX}/qpdftools.exe\"
+      RESULT_VARIABLE EXIT_CODE
+    )
+    if(NOT EXIT_CODE EQUAL 0)
+      message(WARNING \"windeployqt failed with exit code \${EXIT_CODE}\")
+    endif()
+  ")
 endif()

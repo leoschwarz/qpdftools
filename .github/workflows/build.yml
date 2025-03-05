@@ -46,10 +46,18 @@ jobs:
       
       - name: Build
         run: |
+          # Add Qt bin directory to PATH to ensure windeployqt can be found
+          $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
+          # Set Qt6_DIR for the build script to find windeployqt
+          $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
           python build.py --platform windows --type release
       
       - name: Create Package
         run: |
+          # Add Qt bin directory to PATH to ensure windeployqt can be found
+          $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
+          # Set Qt6_DIR for the build script to find windeployqt
+          $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
           python build.py --platform windows --type release --package --portable
       
       - name: Upload Artifacts

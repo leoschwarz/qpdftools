@@ -19,6 +19,7 @@ Optimizing the cross-platform build process and fixing GitHub Actions workflow i
 - Generated and committed Windows icon file to simplify the build process
 - Simplified GitHub Actions workflow by removing ImageMagick dependency
 - Fixed Linux build in GitHub Actions by updating to use Qt6 instead of Qt5
+- Fixed Windows build issue with missing Qt6Core.dll by improving Qt dependency deployment
 
 ## Immediate Priorities
 1. ✅ Update CMake configuration files
@@ -56,13 +57,21 @@ The project has completed the implementation of Windows build support. All the r
 We've optimized the Windows build process by creating a bash script (`generate_ico.sh`) that generates the Windows icon file (app.ico) from the SVG source. This icon file is now pre-generated and committed to the repository, which simplifies the GitHub Actions workflow by removing the need to install ImageMagick and generate the icon during the build process. This reduces build dependencies and makes the build process more reliable.
 
 We've fixed an issue with the Windows build in GitHub Actions where the build was failing with an error related to the windeployqt tool not recognizing the `--no-angle` option. This option appears to be invalid or deprecated in the version of Qt being used in the GitHub Actions workflow (Qt 6.2.4). We've explicitly removed this option from the src/CMakeLists.txt file and added a comment explaining the removal to ensure the build succeeds in GitHub Actions.
-We've optimized the Windows build process by creating a bash script (`generate_ico.sh`) that generates the Windows icon file (app.ico) from the SVG source. This icon file is now pre-generated and committed to the repository, which simplifies the GitHub Actions workflow by removing the need to install ImageMagick and generate the icon during the build process. This reduces build dependencies and makes the build process more reliable.
+
+We've fixed a critical issue with the Windows build where the application was failing to start due to missing Qt6Core.dll. This was caused by improper deployment of Qt dependencies in the packaging process. We've made three key improvements:
+
+1. Enhanced the build.py script to run windeployqt on the installed executable when creating a portable package, ensuring all Qt dependencies are included.
+2. Modified src/CMakeLists.txt to run windeployqt during both the post-build step and the installation process, ensuring Qt DLLs are properly included in the package.
+3. Updated the GitHub workflow to ensure the Qt bin directory is in the PATH when running the build and packaging commands, and set the Qt6_DIR environment variable for the build script to find windeployqt.
+
+These changes ensure that all required Qt DLLs are properly included in both the installer and portable packages, fixing the "Qt6Core.dll not found" error.
 
 ## Next Steps
 1. ✅ Fix the windeployqt error with the `--no-angle` option in GitHub Actions
 2. ✅ Fix the Linux build in GitHub Actions to use Qt6 instead of Qt5
-3. Test the Windows build process
-4. Test the Linux build process
-5. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
-6. Consider adding more features to the build script as needed
-7. Test the cross-compilation process using the provided guide
+3. ✅ Fix Windows build issue with missing Qt6Core.dll
+4. Test the Windows build process with the updated Qt dependency deployment
+5. Test the Linux build process
+6. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
+7. Consider adding more features to the build script as needed
+8. Test the cross-compilation process using the provided guide
