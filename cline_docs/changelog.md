@@ -29,6 +29,7 @@
 - Simplified GitHub Actions workflow by removing ImageMagick dependency and using pre-generated icon file
 - Fixed Linux build in GitHub Actions by updating the workflow to use Qt6 instead of Qt5
 - Fixed Windows build issue with missing Qt6Core.dll by improving Qt dependency deployment
+- Fixed Windows build error with qpdf variable declaration mismatch (type 'Qpdf &' vs 'Qpdf')
 
 ### Issues
 - Identified issue with Windows build in GitHub Actions: windeployqt tool fails with "Unknown option 'no-angle'" error

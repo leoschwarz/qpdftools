@@ -20,6 +20,7 @@ Optimizing the cross-platform build process and fixing GitHub Actions workflow i
 - Simplified GitHub Actions workflow by removing ImageMagick dependency
 - Fixed Linux build in GitHub Actions by updating to use Qt6 instead of Qt5
 - Fixed Windows build issue with missing Qt6Core.dll by improving Qt dependency deployment
+- Fixed Windows build error with qpdf variable declaration mismatch
 
 ## Immediate Priorities
 1. ✅ Update CMake configuration files
@@ -75,13 +76,16 @@ We've now fixed another critical issue with the Windows build in GitHub Actions 
 
 These changes make the build process more robust by improving the detection of the windeployqt tool, especially in the GitHub Actions environment where paths may differ from local development environments.
 
+We've fixed a type mismatch error in the Windows build related to the global qpdf variable. The error was "error C2040: 'qpdf': 'Qpdf &' differs in levels of indirection from 'Qpdf'", which occurred because the declaration in qpdf.hpp (as a non-reference type) didn't match the definition in qpdf.cpp (as a reference type). We've updated the declaration in qpdf.hpp to use a reference type, ensuring consistency between the declaration and definition.
+
 ## Next Steps
 1. ✅ Fix the windeployqt error with the `--no-angle` option in GitHub Actions
 2. ✅ Fix the Linux build in GitHub Actions to use Qt6 instead of Qt5
 3. ✅ Fix Windows build issue with missing Qt6Core.dll
 4. ✅ Fix Windows build issue with windeployqt path detection in GitHub Actions
-5. Test the Windows build process with the updated Qt dependency deployment
-6. Test the Linux build process
-7. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
-8. Consider adding more features to the build script as needed
-9. Test the cross-compilation process using the provided guide
+5. ✅ Fix Windows build error with qpdf variable declaration mismatch
+6. Test the Windows build process with the updated Qt dependency deployment
+7. Test the Linux build process
+8. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
+9. Consider adding more features to the build script as needed
+10. Test the cross-compilation process using the provided guide
