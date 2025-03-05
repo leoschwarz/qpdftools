@@ -28,6 +28,10 @@
 - Fixed Windows build failure in GitHub Actions by adding automatic generation of app.ico from SVG source
 - Simplified GitHub Actions workflow by removing ImageMagick dependency and using pre-generated icon file
 
+### Issues
+- Identified issue with Windows build in GitHub Actions: windeployqt tool fails with "Unknown option 'no-angle'" error
+- Fixed windeployqt error by explicitly removing the unsupported `--no-angle` option and adding a comment explaining the removal
+
 ## [Future Improvements]
 - ✅ Replace the placeholder icon file with an actual ICO file (now pre-generated and committed to repository)
 - Add more features to the build script as needed
