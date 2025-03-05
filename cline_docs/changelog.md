@@ -18,6 +18,7 @@
 
 ### Fixed
 - Fixed GitHub Actions workflow by removing incorrect Qt module specifications that were causing build failures
+- Fixed Windows build compatibility issue with Qt::ColorScheme by adding a fallback implementation for Qt 6.2.4
 
 ### Added
 - Created comprehensive guide for cross-compiling from Linux to Windows (windows_cross_compile.md)

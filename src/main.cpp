@@ -2,6 +2,19 @@
 #include <QApplication>
 #include <QStyleHints>
 #include <QTranslator>
+#include <QtGlobal>
+
+// Qt::ColorScheme was introduced in Qt 6.5
+// For compatibility with Qt 6.2.4, we create our own enum
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+namespace Qt {
+    enum class ColorScheme {
+        Unknown,
+        Light,
+        Dark
+    };
+}
+#endif
 
 Qt::ColorScheme getColorScheme(int windowColor, int windowTextColor);
 
@@ -29,8 +42,11 @@ int main(int argc, char *argv[]) {
 }
 
 Qt::ColorScheme getColorScheme(int windowColor, int windowTextColor) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  // Use the built-in Qt::ColorScheme if available (Qt 6.5+)
   if (Qt::ColorScheme() != Qt::ColorScheme::Unknown)
     return Qt::ColorScheme();
+#endif
 
   // If the system doesn't support color schemes, find if it's light or dark
   // by comparing the color of the background and text.
@@ -39,4 +55,4 @@ Qt::ColorScheme getColorScheme(int windowColor, int windowTextColor) {
     return Qt::ColorScheme::Light;
 
   return Qt::ColorScheme::Dark;
-};
+}
