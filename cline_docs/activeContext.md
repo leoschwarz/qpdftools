@@ -1,7 +1,7 @@
 # QPDFTools Windows Build Implementation - Active Context
 
 ## Current Work Focus
-Fixing GitHub Actions Windows build issues and implementing cross-compilation from Linux to Windows.
+Optimizing the Windows build process and simplifying the GitHub Actions workflow.
 
 ## Recent Decisions
 - Created CRCT system files to track the implementation process
@@ -15,6 +15,9 @@ Fixing GitHub Actions Windows build issues and implementing cross-compilation fr
 - Fixed GitHub Actions workflow by removing incorrect Qt module specifications
 - Created a guide for cross-compiling from Linux to Windows
 - Fixed Windows build compatibility issue with Qt::ColorScheme by adding a fallback implementation for Qt 6.2.4
+- Created a bash script to generate Windows icon file from SVG source
+- Generated and committed Windows icon file to simplify the build process
+- Simplified GitHub Actions workflow by removing ImageMagick dependency
 
 ## Immediate Priorities
 1. ✅ Update CMake configuration files
@@ -41,18 +44,21 @@ Fixing GitHub Actions Windows build issues and implementing cross-compilation fr
    - ✅ Fix Qt module specification in GitHub Actions workflow
    - ✅ Fix Qt::ColorScheme compatibility issue for Qt 6.2.4
    - ✅ Fix missing app.ico file by adding icon generation step to GitHub Actions workflow
+   - ⬜ Fix windeployqt error with --no-angle option
 8. ✅ Create cross-compilation guide
    - ✅ Document MXE-based cross-compilation
    - ✅ Document Docker-based cross-compilation
    - ✅ Document MinGW-based cross-compilation
-
 ## Current State
 The project has completed the implementation of Windows build support. All the required changes have been made to support Windows builds, including CMake configuration updates, Windows-specific resources, external tool handling updates, dependencies directory structure, build automation script, and CI/CD configuration. The GitHub Actions workflow has been fixed to correctly specify Qt modules, and a comprehensive guide for cross-compiling from Linux to Windows has been created. Additionally, a compatibility fix for Qt::ColorScheme has been implemented to ensure the Windows build works correctly with Qt 6.2.4.
 
-We've now fixed an issue with the Windows build in GitHub Actions where the build was failing due to a missing app.ico file. We've added a step to the GitHub Actions workflow to automatically generate the app.ico file from the SVG source using ImageMagick before building the project.
+We've optimized the Windows build process by creating a bash script (`generate_ico.sh`) that generates the Windows icon file (app.ico) from the SVG source. This icon file is now pre-generated and committed to the repository, which simplifies the GitHub Actions workflow by removing the need to install ImageMagick and generate the icon during the build process. This reduces build dependencies and makes the build process more reliable.
+
+Currently, we're facing an issue with the Windows build in GitHub Actions. The build fails with an error related to the windeployqt tool not recognizing the `--no-angle` option. This option appears to be invalid or deprecated in the version of Qt being used in the GitHub Actions workflow (Qt 6.2.4). The local src/CMakeLists.txt file doesn't contain this option, suggesting there might be a cached version of the build files in the GitHub Actions environment or another location where this option is specified.
+We've optimized the Windows build process by creating a bash script (`generate_ico.sh`) that generates the Windows icon file (app.ico) from the SVG source. This icon file is now pre-generated and committed to the repository, which simplifies the GitHub Actions workflow by removing the need to install ImageMagick and generate the icon during the build process. This reduces build dependencies and makes the build process more reliable.
 
 ## Next Steps
 1. Test the Windows build process
-2. ✅ Update the actual icon file (app.ico) from the SVG source (now automated in CI)
+2. ✅ Update the actual icon file (app.ico) from the SVG source (now pre-generated and committed to repository)
 3. Consider adding more features to the build script as needed
 4. Test the cross-compilation process using the provided guide

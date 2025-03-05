@@ -70,7 +70,6 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
     --verbose 0
     --no-compiler-runtime
-    --no-angle
     --no-opengl-sw
     \"$<TARGET_FILE:qpdftools>\"
     COMMENT "Running windeployqt..."
