@@ -10,92 +10,45 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    env:
+      QT_VERSION: '6.2.4'
+      QT_PATH: '${{ github.workspace }}/Qt/${{ env.QT_VERSION }}/msvc2019_64'
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+      - uses: jurplel/install-qt-action@v3
         with:
-          version: '6.2.4'
+          version: ${{ env.QT_VERSION }}
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
-          # The qtbase module (which includes Widgets and Concurrent) is installed by default
       
-      - name: Download Ghostscript
+      - name: Setup Dependencies
         run: |
+          # Ghostscript
           Invoke-WebRequest -Uri "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs1000/gs1000w64.exe" -OutFile "gs-installer.exe"
           Start-Process -FilePath "gs-installer.exe" -ArgumentList "/S /D=C:\ghostscript" -Wait
           mkdir -p deps/ghostscript/bin
           Copy-Item "C:\ghostscript\bin\*" -Destination "deps/ghostscript/bin" -Recurse
-      
-      - name: Download QPDF
-        run: |
+          
+          # QPDF
           Invoke-WebRequest -Uri "https://github.com/qpdf/qpdf/releases/download/release-qpdf-10.6.3/qpdf-10.6.3-bin-mingw64.zip" -OutFile "qpdf.zip"
           Expand-Archive -Path "qpdf.zip" -DestinationPath "C:\qpdf"
           mkdir -p deps/qpdf/bin
           Copy-Item "C:\qpdf\qpdf-10.6.3\bin\*" -Destination "deps/qpdf/bin" -Recurse
       
-      # Icon generation has been moved to a pre-build step
-      # The app.ico file is now committed to the repository
-      
-      - name: Build
+      - name: Build and Package
+        env:
+          PATH: "${{ env.QT_PATH }}/bin;${{ env.PATH }}"
+          Qt6_DIR: "${{ env.QT_PATH }}/bin"
         run: |
-          # Add Qt bin directory to PATH to ensure windeployqt can be found
-          $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
-          # Set Qt6_DIR for the build script to find windeployqt
-          $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
-          
-          # Debug: Check if Qt bin directory exists and list its contents
-          Write-Host "Checking Qt installation paths:"
-          if (Test-Path "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin") {
-            Write-Host "Found Qt at $env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
-          } else {
-            Write-Host "Qt bin directory not found at expected location"
-            # Check alternate location
-            if (Test-Path "/Qt/6.2.4/msvc2019_64/bin") {
-              Write-Host "Found Qt at /Qt/6.2.4/msvc2019_64/bin"
-              $env:PATH = "/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
-              $env:Qt6_DIR = "/Qt/6.2.4/msvc2019_64/bin"
-            }
-          }
-          
-          # Run the build
-          python build.py --platform windows --type release
-      
-      - name: Create Package
-        run: |
-          # Add Qt bin directory to PATH to ensure windeployqt can be found
-          $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
-          # Set Qt6_DIR for the build script to find windeployqt
-          $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
-          
-          # Debug: List Qt directory contents to verify windeployqt location
-          Write-Host "Checking Qt bin directory contents:"
-          if (Test-Path "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin") {
-            Get-ChildItem "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin" | Where-Object { $_.Name -like "*deploy*" } | ForEach-Object { Write-Host $_.FullName }
-          } else {
-            Write-Host "Qt bin directory not found at expected location"
-            # Try alternate location based on jurplel/install-qt-action
-            if (Test-Path "/Qt/6.2.4/msvc2019_64/bin") {
-              Write-Host "Found alternate Qt bin directory at /Qt/6.2.4/msvc2019_64/bin"
-              Get-ChildItem "/Qt/6.2.4/msvc2019_64/bin" | Where-Object { $_.Name -like "*deploy*" } | ForEach-Object { Write-Host $_.FullName }
-              # Add alternate path to PATH
-              $env:PATH = "/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
-              $env:Qt6_DIR = "/Qt/6.2.4/msvc2019_64/bin"
-            }
-          }
-          
-          # Run the build script with package and portable options
           python build.py --platform windows --type release --package --portable
       
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: |
@@ -108,34 +61,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+      - uses: jurplel/install-qt-action@v3
         with:
           version: '6.2.4'
           host: 'linux'
           target: 'desktop'
-          # The qtbase module (which includes Widgets and Concurrent) is installed by default
       
-      - name: Install Additional Dependencies
+      - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake extra-cmake-modules ghostscript qpdf
       
-      - name: Build
-        run: |
-          python3 build.py --platform linux --type release
+      - name: Build and Package
+        run: python3 build.py --platform linux --type release --package
       
-      - name: Create Package
-        run: |
-          python3 build.py --platform linux --type release --package
-      
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: dist/
