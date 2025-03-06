@@ -12,7 +12,6 @@ jobs:
     runs-on: windows-latest
     env:
       QT_VERSION: '6.2.4'
-      QT_PATH: '${{ github.workspace }}/Qt/${{ env.QT_VERSION }}/msvc2019_64'
     steps:
       - uses: actions/checkout@v4
       
@@ -22,7 +21,7 @@ jobs:
       
       - uses: jurplel/install-qt-action@v3
         with:
-          version: ${{ env.QT_VERSION }}
+          version: '6.2.4'
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
@@ -42,10 +41,11 @@ jobs:
           Copy-Item "C:\qpdf\qpdf-10.6.3\bin\*" -Destination "deps/qpdf/bin" -Recurse
       
       - name: Build and Package
-        env:
-          PATH: "${{ env.QT_PATH }}/bin;${{ env.PATH }}"
-          Qt6_DIR: "${{ env.QT_PATH }}/bin"
         run: |
+          # Add Qt bin directory to PATH
+          $env:PATH = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin;$env:PATH"
+          $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
+          
           python build.py --platform windows --type release --package --portable
       
       - uses: actions/upload-artifact@v4
