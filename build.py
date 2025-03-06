@@ -6,8 +6,18 @@ import subprocess
 import platform
 import argparse
 import shutil
+import logging
+from typing import List, Optional
 
-def main():
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+logger = logging.getLogger('build')
+
+def parse_arguments():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Build QPDFTools')
     parser.add_argument('--platform', choices=['auto', 'windows', 'linux'], default='auto',
                         help='Target platform (default: auto-detect)')
@@ -24,145 +34,200 @@ def main():
     if target_platform == 'auto':
         target_platform = 'windows' if platform.system() == 'Windows' else 'linux'
     
-    # Set build type
-    build_type = 'Release' if args.type == 'release' else 'Debug'
+    return args, target_platform
+
+def run_command(cmd: List[str], cwd: Optional[str] = None) -> None:
+    """Execute a command with proper logging and error handling."""
+    cmd_str = ' '.join(cmd)
+    logger.info(f'Running: {cmd_str}')
+    try:
+        subprocess.run(cmd, check=True, cwd=cwd)
+    except subprocess.CalledProcessError as e:
+        logger.error(f'Command failed: {cmd_str}')
+        logger.error(f'Error: {e}')
+        sys.exit(1)
+
+def create_directory(dir_path: str, clean: bool = False) -> None:
+    """Create a directory, optionally removing it first if it exists."""
+    if clean and os.path.exists(dir_path):
+        logger.info(f'Cleaning directory: {dir_path}')
+        shutil.rmtree(dir_path)
     
-    # Create build directory
-    build_dir = 'build'
-    if not os.path.exists(build_dir):
-        os.makedirs(build_dir)
-    
-    # Configure CMake
+    if not os.path.exists(dir_path):
+        logger.info(f'Creating directory: {dir_path}')
+        os.makedirs(dir_path)
+
+def configure_cmake(build_dir: str, build_type: str, target_platform: str) -> None:
+    """Configure the project with CMake."""
     cmake_args = ['-DCMAKE_BUILD_TYPE=' + build_type]
     
-    if target_platform == 'windows':
-        # Windows-specific configuration
-        if 'VSINSTALLDIR' in os.environ:
-            # Visual Studio environment is already set up
-            pass
-        else:
-            # Use default generator
-            cmake_args.append('-G')
-            cmake_args.append('Visual Studio 17 2022')
+    # Add platform-specific CMake arguments
+    if target_platform == 'windows' and 'VSINSTALLDIR' not in os.environ:
+        # Use default generator on Windows if not in a Visual Studio environment
+        cmake_args.extend(['-G', 'Visual Studio 17 2022'])
     
     # Run CMake configure
-    cmake_configure_cmd = ['cmake', '-B', build_dir, '-S', '.'] + cmake_args
-    print('Running:', ' '.join(cmake_configure_cmd))
-    subprocess.run(cmake_configure_cmd, check=True)
+    cmd = ['cmake', '-B', build_dir, '-S', '.'] + cmake_args
+    run_command(cmd)
+
+def build_project(build_dir: str, build_type: str) -> None:
+    """Build the project using CMake."""
+    cmd = ['cmake', '--build', build_dir, '--config', build_type]
+    run_command(cmd)
+
+def install_to_dist(build_dir: str, dist_dir: str, build_type: str, target_platform: str) -> None:
+    """Install the built project to the distribution directory."""
+    cmd = ['cmake', '--install', build_dir, '--prefix', dist_dir]
     
-    # Build
-    cmake_build_cmd = ['cmake', '--build', build_dir, '--config', build_type]
-    print('Running:', ' '.join(cmake_build_cmd))
-    subprocess.run(cmake_build_cmd, check=True)
+    # Strip binaries for release builds on Windows
+    if target_platform == 'windows' and build_type != 'Debug':
+        cmd.append('--strip')
     
-    # Package if requested
-    if args.package or args.portable:
-        # Create dist directory
-        dist_dir = 'dist'
-        if os.path.exists(dist_dir):
-            shutil.rmtree(dist_dir)
-        os.makedirs(dist_dir)
-        
-        # Install to dist directory
-        cmake_install_cmd = ['cmake', '--install', build_dir, '--prefix', dist_dir]
-        if target_platform == 'windows' and build_type != 'Debug':
-            cmake_install_cmd.append('--strip')
-        print('Running:', ' '.join(cmake_install_cmd))
-        subprocess.run(cmake_install_cmd, check=True)
-        
+    run_command(cmd)
+
+def create_windows_installer(build_dir: str, build_type: str) -> None:
+    """Create a Windows installer using CPack/NSIS."""
+    # Create installer using CPack
+    cpack_cmd = ['cpack', '-G', 'NSIS', '-C', build_type, '-B', 'installer']
+    run_command(cpack_cmd, cwd=build_dir)
+    
+    # Copy installer to project root
+    installer_dir = os.path.join(build_dir, 'installer')
+    installer_files = [f for f in os.listdir(installer_dir) if f.endswith('.exe')]
+    
+    if installer_files:
+        installer_path = os.path.join(installer_dir, installer_files[0])
+        shutil.copy(installer_path, os.path.join('.', installer_files[0]))
+        logger.info(f'Installer created: {installer_files[0]}')
+    else:
+        logger.warning('No installer file found')
+
+def find_windeployqt() -> Optional[str]:
+    """Find the windeployqt executable path."""
+    # Check if we're in GitHub Actions environment
+    if 'IQTA_TOOLS' in os.environ:
+        # GitHub Actions specific paths
+        possible_paths = [
+            os.path.join(os.environ.get('IQTA_TOOLS', ''), 'Qt', '6.2.4', 'msvc2019_64', 'bin', 'windeployqt.exe'),
+            '/Qt/6.2.4/msvc2019_64/bin/windeployqt.exe'  # Alternate path format seen in logs
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+    
+    # Check Qt6_DIR
+    qt_bin_dir = os.environ.get('Qt6_DIR', '')
+    if qt_bin_dir and os.path.exists(os.path.join(qt_bin_dir, 'windeployqt.exe')):
+        return os.path.join(qt_bin_dir, 'windeployqt.exe')
+    
+    # Search in PATH
+    for path_dir in os.environ.get('PATH', '').split(os.pathsep):
+        windeployqt_path = os.path.join(path_dir, 'windeployqt.exe')
+        if os.path.exists(windeployqt_path):
+            return windeployqt_path
+    
+    return None
+
+def deploy_qt_dependencies(dist_dir: str) -> None:
+    """Deploy Qt dependencies for Windows portable build."""
+    # Find executable in dist directory
+    exe_path = None
+    for root, _, files in os.walk(dist_dir):
+        for file in files:
+            if file.endswith('.exe'):
+                exe_path = os.path.join(root, file)
+                break
+        if exe_path:
+            break
+    
+    if not exe_path:
+        logger.warning('No executable found in dist directory')
+        return
+    
+    # Find windeployqt
+    windeployqt_path = find_windeployqt()
+    if not windeployqt_path:
+        logger.warning("Could not find windeployqt.exe, Qt dependencies may be missing")
+        logger.debug("PATH environment variable: " + os.environ.get('PATH', ''))
+        logger.debug("Qt6_DIR environment variable: " + os.environ.get('Qt6_DIR', ''))
+        return
+    
+    logger.info(f"Found windeployqt at: {windeployqt_path}")
+    windeployqt_cmd = [
+        windeployqt_path,
+        '--verbose', '0',
+        '--no-compiler-runtime',
+        '--no-opengl-sw',
+        exe_path
+    ]
+    
+    try:
+        run_command(windeployqt_cmd)
+        logger.info("Successfully deployed Qt dependencies")
+    except subprocess.CalledProcessError as e:
+        logger.warning(f"Failed to run windeployqt: {e}")
+        logger.warning("Qt dependencies may be missing")
+
+def create_portable_package(dist_dir: str, target_platform: str) -> None:
+    """Create a portable ZIP package."""
+    import zipfile
+    
+    zip_name = f'qpdftools-{target_platform}-portable.zip'
+    logger.info(f'Creating portable package: {zip_name}')
+    
+    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(dist_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                archive_path = os.path.relpath(file_path, dist_dir)
+                zipf.write(file_path, archive_path)
+    
+    logger.info(f'Portable package created: {zip_name}')
+
+def package_project(args, build_dir: str, dist_dir: str, build_type: str, target_platform: str) -> None:
+    """Package the project based on the requested package types."""
+    if not (args.package or args.portable):
+        return
+    
+    # Create and clean dist directory
+    create_directory(dist_dir, clean=True)
+    
+    # Install to dist directory
+    install_to_dist(build_dir, dist_dir, build_type, target_platform)
+    
+    # Create installer if requested (Windows only)
+    if args.package and target_platform == 'windows':
+        create_windows_installer(build_dir, build_type)
+    
+    # Create portable package if requested
+    if args.portable:
+        # For Windows, deploy Qt dependencies first
         if target_platform == 'windows':
-            if args.package:
-                # Create installer using CPack
-                cpack_cmd = ['cpack', '-G', 'NSIS', '-C', build_type, '-B', 'installer']
-                print('Running:', ' '.join(cpack_cmd))
-                subprocess.run(cpack_cmd, cwd=build_dir, check=True)
-                
-                # Copy installer to project root
-                installer_files = [f for f in os.listdir(os.path.join(build_dir, 'installer')) if f.endswith('.exe')]
-                if installer_files:
-                    shutil.copy(
-                        os.path.join(build_dir, 'installer', installer_files[0]),
-                        os.path.join('.', installer_files[0])
-                    )
-                    print(f'Installer created: {installer_files[0]}')
-            
-            if args.portable:
-                # Create ZIP archive for portable use
-                import zipfile
-                
-                # For Windows, make sure Qt DLLs are included
-                if target_platform == 'windows':
-                    # Find the executable in the dist directory
-                    exe_path = None
-                    for root, _, files in os.walk(dist_dir):
-                        for file in files:
-                            if file.endswith('.exe'):
-                                exe_path = os.path.join(root, file)
-                                break
-                        if exe_path:
-                            break
-                    
-                    if exe_path:
-                        # Run windeployqt on the installed executable to ensure all Qt dependencies are copied
-                        # First, try to find windeployqt directly in PATH
-                        windeployqt_path = None
-                        
-                        # Check if we're in GitHub Actions environment
-                        if 'IQTA_TOOLS' in os.environ:
-                            # GitHub Actions specific path
-                            possible_paths = [
-                                os.path.join(os.environ.get('IQTA_TOOLS', ''), 'Qt', '6.2.4', 'msvc2019_64', 'bin', 'windeployqt.exe'),
-                                '/Qt/6.2.4/msvc2019_64/bin/windeployqt.exe'  # Alternate path format seen in logs
-                            ]
-                            for path in possible_paths:
-                                if os.path.exists(path):
-                                    windeployqt_path = path
-                                    break
-                        
-                        # If not found in GitHub Actions paths, try Qt6_DIR
-                        if not windeployqt_path:
-                            qt_bin_dir = os.environ.get('Qt6_DIR', '')
-                            if qt_bin_dir and os.path.exists(os.path.join(qt_bin_dir, 'windeployqt.exe')):
-                                windeployqt_path = os.path.join(qt_bin_dir, 'windeployqt.exe')
-                        
-                        # If still not found, search in PATH
-                        if not windeployqt_path:
-                            for path_dir in os.environ.get('PATH', '').split(os.pathsep):
-                                if os.path.exists(os.path.join(path_dir, 'windeployqt.exe')):
-                                    windeployqt_path = os.path.join(path_dir, 'windeployqt.exe')
-                                    break
-                        
-                        if windeployqt_path:
-                            print(f"Found windeployqt at: {windeployqt_path}")
-                            windeployqt_cmd = [
-                                windeployqt_path,
-                                '--verbose', '0',
-                                '--no-compiler-runtime',
-                                '--no-opengl-sw',
-                                exe_path
-                            ]
-                            print('Running:', ' '.join(windeployqt_cmd))
-                            try:
-                                subprocess.run(windeployqt_cmd, check=True)
-                                print("Successfully deployed Qt dependencies")
-                            except subprocess.CalledProcessError as e:
-                                print(f"Warning: Failed to run windeployqt: {e}")
-                                print("Qt dependencies may be missing")
-                        else:
-                            print("Warning: Could not find windeployqt.exe, Qt dependencies may be missing")
-                            print("PATH environment variable:", os.environ.get('PATH', ''))
-                            print("Qt6_DIR environment variable:", os.environ.get('Qt6_DIR', ''))
-                
-                zip_name = f'qpdftools-{target_platform}-portable.zip'
-                with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                    for root, _, files in os.walk(dist_dir):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            zipf.write(
-                                file_path,
-                                os.path.relpath(file_path, dist_dir)
-                            )
-                print(f'Portable package created: {zip_name}')
+            deploy_qt_dependencies(dist_dir)
+        
+        create_portable_package(dist_dir, target_platform)
+
+def main():
+    """Main build function."""
+    args, target_platform = parse_arguments()
+    
+    # Set build type
+    build_type = 'Release' if args.type == 'release' else 'Debug'
+    logger.info(f'Building for platform: {target_platform}, type: {build_type}')
+    
+    # Define directories
+    build_dir = 'build'
+    dist_dir = 'dist'
+    
+    # Create build directory
+    create_directory(build_dir)
+    
+    # Configure, build and package
+    configure_cmake(build_dir, build_type, target_platform)
+    build_project(build_dir, build_type)
+    package_project(args, build_dir, dist_dir, build_type, target_platform)
+    
+    logger.info('Build completed successfully!')
 
 if __name__ == '__main__':
     main()
