@@ -8,6 +8,7 @@ import argparse
 import shutil
 import logging
 from typing import List, Optional
+import zipfile
 
 # Configure logging
 logging.basicConfig(
@@ -97,8 +98,11 @@ def create_windows_installer(build_dir: str, build_type: str) -> None:
     
     if installer_files:
         installer_path = os.path.join(installer_dir, installer_files[0])
-        shutil.copy(installer_path, os.path.join('.', installer_files[0]))
-        logger.info(f'Installer created: {installer_files[0]}')
+        # Create installers directory if it doesn't exist
+        create_directory('installers')
+        # Copy to installers directory
+        shutil.copy(installer_path, os.path.join('installers', installer_files[0]))
+        logger.info(f'Installer created: installers/{installer_files[0]}')
     else:
         logger.warning('No installer file found')
 
@@ -169,20 +173,82 @@ def deploy_qt_dependencies(dist_dir: str) -> None:
         logger.warning("Qt dependencies may be missing")
 
 def create_portable_package(dist_dir: str, target_platform: str) -> None:
-    """Create a portable ZIP package."""
-    import zipfile
+    """Create a portable package without zipping for Windows."""
+    # For Windows, we'll create a better organized structure
+    if target_platform == 'windows':
+        portable_dir = 'portable'
+        create_directory(portable_dir, clean=True)
+        
+        # Copy contents from dist directory to portable directory
+        for item in os.listdir(dist_dir):
+            source_path = os.path.join(dist_dir, item)
+            dest_path = os.path.join(portable_dir, item)
+            if os.path.isdir(source_path):
+                shutil.copytree(source_path, dest_path)
+            else:
+                shutil.copy2(source_path, dest_path)
+        
+        # Extract qpdf.zip content to the portable directory
+        if os.path.exists('qpdf.zip'):
+            logger.info('Extracting QPDF dependencies to portable directory')
+            with zipfile.ZipFile('qpdf.zip', 'r') as qpdf_zip:
+                for file_info in qpdf_zip.infolist():
+                    # Only extract files from qpdf-10.6.3 folder
+                    if file_info.filename.startswith('qpdf-10.6.3/'):
+                        # Adjust output path to remove the qpdf-10.6.3 prefix
+                        target_path = os.path.join(portable_dir, file_info.filename.replace('qpdf-10.6.3/', ''))
+                        # Create directories if needed
+                        if file_info.filename.endswith('/'):
+                            if not os.path.exists(target_path):
+                                os.makedirs(target_path)
+                        else:
+                            # Extract the file
+                            extracted_data = qpdf_zip.read(file_info.filename)
+                            # Ensure directory exists
+                            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                            # Write the file
+                            with open(target_path, 'wb') as outfile:
+                                outfile.write(extracted_data)
+        
+        logger.info(f'Created portable package in directory: {portable_dir}')
+        
+        # Move GS installer to installers folder
+        if os.path.exists('gs-installer.exe'):
+            create_directory('installers', clean=False)
+            shutil.copy('gs-installer.exe', os.path.join('installers', 'gs-installer.exe'))
+            logger.info('Moved Ghostscript installer to installers directory')
+    else:
+        # Linux portable packaging remains unchanged
+        zip_name = f'qpdftools-{target_platform}-portable.zip'
+        logger.info(f'Creating portable package: {zip_name}')
+        
+        with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, _, files in os.walk(dist_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    archive_path = os.path.relpath(file_path, dist_dir)
+                    zipf.write(file_path, archive_path)
+        
+        logger.info(f'Portable package created: {zip_name}')
+
+def organize_windows_build():
+    """Organize Windows build artifacts into a structured format."""
+    logger.info('Organizing Windows build artifacts')
     
-    zip_name = f'qpdftools-{target_platform}-portable.zip'
-    logger.info(f'Creating portable package: {zip_name}')
+    # Create output directories
+    create_directory('installers', clean=False)
     
-    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(dist_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                archive_path = os.path.relpath(file_path, dist_dir)
-                zipf.write(file_path, archive_path)
+    # Move installer files to installers directory
+    for file in os.listdir('.'):
+        if file.endswith('.exe') and file != 'gs-installer.exe':
+            if not os.path.exists(os.path.join('installers', file)):
+                shutil.move(file, os.path.join('installers', file))
+                logger.info(f'Moved {file} to installers directory')
     
-    logger.info(f'Portable package created: {zip_name}')
+    # Move portable-zip file to portable directory if it exists
+    if os.path.exists('qpdftools-windows-portable.zip') and os.path.isdir('portable'):
+        logger.info('Removing existing qpdftools-windows-portable.zip as we now use the portable directory directly')
+        os.remove('qpdftools-windows-portable.zip')
 
 def package_project(args, build_dir: str, dist_dir: str, build_type: str, target_platform: str) -> None:
     """Package the project based on the requested package types."""
@@ -206,6 +272,10 @@ def package_project(args, build_dir: str, dist_dir: str, build_type: str, target
             deploy_qt_dependencies(dist_dir)
         
         create_portable_package(dist_dir, target_platform)
+    
+    # For Windows, organize the build artifacts
+    if target_platform == 'windows':
+        organize_windows_build()
 
 def main():
     """Main build function."""
