@@ -299,34 +299,10 @@ def build_flatpak() -> None:
     with open(temp_manifest, 'r') as temp_file:
         manifest_lines = temp_file.readlines()
     
-    # Find the position where modules are defined
-    modules_index = -1
-    for i, line in enumerate(manifest_lines):
-        if line.strip() == "modules:":
-            modules_index = i
-            break
-    
-    if modules_index == -1:
-        logger.error("Could not find 'modules:' section in the manifest")
-        sys.exit(1)
-    
-    # Create the modified manifest with ECM module added
+    # Write manifest excluding the last 3 lines (which typically contain source information)
     with open(final_manifest, 'w') as manifest_file:
-        # Write lines up to the modules section
-        manifest_file.writelines(manifest_lines[:modules_index+1])
-        
-        # Add ECM as the first module
-        manifest_file.write('  - name: extra-cmake-modules\n')
-        manifest_file.write('    buildsystem: cmake-ninja\n')
-        manifest_file.write('    sources:\n')
-        manifest_file.write('      - type: archive\n')
-        manifest_file.write('        url: https://download.kde.org/stable/frameworks/5.108/extra-cmake-modules-5.108.0.tar.xz\n')
-        manifest_file.write('        sha256: e0b76048f784401ee8790876e17f747b23ccb3c8bc1952c11cfecc780d7f7e33\n')
-        manifest_file.write('\n')
-        
-        # Write the remaining modules but exclude the last 3 lines (which typically contain source information)
-        manifest_file.writelines(manifest_lines[modules_index+1:-3])
-        
+        # Write all but the last 3 lines
+        manifest_file.writelines(manifest_lines[:-3])
         # Add local directory as source
         manifest_file.write('      - type: dir\n')
         manifest_file.write('        path: .\n')
