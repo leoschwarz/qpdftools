@@ -56,7 +56,7 @@ void ExternalSoftware::run(const QStringList &arguments, const QString &dir) {
 
 QString ExternalSoftware::getPlatformSpecificPath(const QString &baseCommand, const QString &windowsExeName) {
 #ifdef _WIN32
-  // On Windows, look for the executable in the deps directory next to the application
+  // On Windows, look for the executable in multiple locations
   QString exePath;
   
   // Check if QApplication is initialized
@@ -69,24 +69,35 @@ QString ExternalSoftware::getPlatformSpecificPath(const QString &baseCommand, co
                << ". Using current directory instead.";
   }
   
-  QString depsPath = exePath + "/deps";
+  // List of locations to search for the executable in order of priority
+  QStringList searchPaths = {
+    // 1. Check in the 'bin' subdirectory of app directory (for portable setup)
+    exePath + "/bin/" + baseCommand + ".exe",
+    exePath + "/bin/gswin64c.exe", // Special case for Ghostscript
+    
+    // 2. Check directly in the app directory
+    exePath + "/" + baseCommand + ".exe",
+    exePath + "/" + windowsExeName,
+    
+    // 3. Check in the 'deps' directory structure (original path)
+    exePath + "/deps/" + windowsExeName,
+    
+    // 4. Check relative paths without the 'deps' prefix
+    exePath + "/" + windowsExeName.split("deps/").last()
+  };
   
-  // First check if the tool is in the deps directory
-  QString toolPath = depsPath + "/" + windowsExeName;
-  if (QFile::exists(toolPath)) {
-    qInfo() << "Found " << baseCommand << " at " << toolPath;
-    return toolPath;
+  // Log the search paths for debugging
+  qInfo() << "Searching for" << baseCommand << "in the following locations:";
+  for (const QString &path : searchPaths) {
+    qInfo() << "  - " << path;
+    if (QFile::exists(path)) {
+      qInfo() << "Found " << baseCommand << " at " << path;
+      return path;
+    }
   }
   
-  // Also check in the same directory as the application
-  toolPath = exePath + "/" + windowsExeName;
-  if (QFile::exists(toolPath)) {
-    qInfo() << "Found " << baseCommand << " at " << toolPath;
-    return toolPath;
-  }
-  
-  // If not found in deps or app directory, return the base command (might be in PATH)
-  qInfo() << "Using " << baseCommand << " from PATH";
+  // If not found in any of the specified locations, return the base command (might be in PATH)
+  qInfo() << "Could not find " << baseCommand << " in any of the specified locations. Using from PATH.";
   return baseCommand;
 #else
   // On other platforms, just use the base command

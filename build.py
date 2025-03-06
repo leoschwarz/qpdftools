@@ -179,6 +179,10 @@ def create_portable_package(dist_dir: str, target_platform: str) -> None:
         portable_dir = 'portable'
         create_directory(portable_dir, clean=True)
         
+        # Create bin directory in portable dir
+        bin_dir = os.path.join(portable_dir, 'bin')
+        create_directory(bin_dir)
+        
         # Copy contents from dist directory to portable directory
         for item in os.listdir(dist_dir):
             source_path = os.path.join(dist_dir, item)
@@ -188,65 +192,48 @@ def create_portable_package(dist_dir: str, target_platform: str) -> None:
             else:
                 shutil.copy2(source_path, dest_path)
         
-        # Extract qpdf.zip content to the portable directory
+        # Extract qpdf.zip content to the bin directory
         if os.path.exists('qpdf.zip'):
-            logger.info('Extracting QPDF dependencies to portable directory')
+            logger.info('Extracting QPDF dependencies to portable bin directory')
             with zipfile.ZipFile('qpdf.zip', 'r') as qpdf_zip:
                 for file_info in qpdf_zip.infolist():
-                    # Only extract files from qpdf-10.6.3 folder
-                    if file_info.filename.startswith('qpdf-10.6.3/'):
-                        # Adjust output path to remove the qpdf-10.6.3 prefix
-                        target_path = os.path.join(portable_dir, file_info.filename.replace('qpdf-10.6.3/', ''))
-                        # Create directories if needed
-                        if file_info.filename.endswith('/'):
-                            if not os.path.exists(target_path):
-                                os.makedirs(target_path)
-                        else:
+                    # Only extract files from qpdf-10.6.3/bin folder
+                    if file_info.filename.startswith('qpdf-10.6.3/bin/'):
+                        # Extract directly to bin directory
+                        target_path = os.path.join(bin_dir, os.path.basename(file_info.filename))
+                        if not file_info.filename.endswith('/'):  # Skip directories
                             # Extract the file
                             extracted_data = qpdf_zip.read(file_info.filename)
-                            # Ensure directory exists
-                            os.makedirs(os.path.dirname(target_path), exist_ok=True)
                             # Write the file
                             with open(target_path, 'wb') as outfile:
                                 outfile.write(extracted_data)
+                            logger.info(f'Extracted {os.path.basename(file_info.filename)} to bin directory')
         
         # Copy Ghostscript binaries if they exist in deps folder
         gs_source_dir = os.path.join('deps', 'ghostscript', 'bin')
-        gs_target_dir = os.path.join(portable_dir, 'bin')
-        
         if os.path.exists(gs_source_dir):
-            logger.info('Copying Ghostscript binaries to portable directory')
-            os.makedirs(gs_target_dir, exist_ok=True)
+            logger.info('Copying Ghostscript binaries to portable bin directory')
             for item in os.listdir(gs_source_dir):
                 source_path = os.path.join(gs_source_dir, item)
-                dest_path = os.path.join(gs_target_dir, item)
+                dest_path = os.path.join(bin_dir, item)
                 if os.path.isdir(source_path):
                     shutil.copytree(source_path, dest_path, dirs_exist_ok=True)
                 else:
                     shutil.copy2(source_path, dest_path)
+                    logger.info(f'Copied {item} to bin directory')
         
-        # Create a launcher batch file that sets PATH before launching the app
-        exe_path = None
-        for root, _, files in os.walk(portable_dir):
-            for file in files:
-                if file.endswith('.exe') and not file.startswith('qpdf') and not file.startswith('gs'):
-                    exe_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(exe_path, portable_dir)
-                    break
-            if exe_path:
-                break
-        
-        if exe_path:
-            # Create launcher batch file
-            launcher_path = os.path.join(portable_dir, 'qpdftools.bat')
-            with open(launcher_path, 'w') as f:
-                f.write('@echo off\n')
-                f.write('setlocal\n')
-                f.write('set "SCRIPT_DIR=%~dp0"\n')
-                f.write('set "PATH=%SCRIPT_DIR%bin;%SCRIPT_DIR%;%PATH%"\n')
-                f.write('start "" "%SCRIPT_DIR%{}"\n'.format(rel_path))
-                f.write('endlocal\n')
-            logger.info(f'Created launcher batch file: {launcher_path}')
+        # Create a readme file explaining how to use the portable version
+        readme_path = os.path.join(portable_dir, 'README.txt')
+        with open(readme_path, 'w') as f:
+            f.write('QPDFTools Portable\n')
+            f.write('=================\n\n')
+            f.write('This is a portable version of QPDFTools with all dependencies included.\n\n')
+            f.write('Usage:\n')
+            f.write('1. Simply run the qpdftools.exe file directly.\n')
+            f.write('2. Do not move any files from their current locations.\n')
+            f.write('3. The bin directory contains required dependencies that must stay with the main executable.\n\n')
+            f.write('If you encounter any issues, please report them on the GitHub repository:\n')
+            f.write('https://github.com/silash35/qpdftools\n')
         
         logger.info(f'Created portable package in directory: {portable_dir}')
         
