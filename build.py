@@ -210,6 +210,44 @@ def create_portable_package(dist_dir: str, target_platform: str) -> None:
                             with open(target_path, 'wb') as outfile:
                                 outfile.write(extracted_data)
         
+        # Copy Ghostscript binaries if they exist in deps folder
+        gs_source_dir = os.path.join('deps', 'ghostscript', 'bin')
+        gs_target_dir = os.path.join(portable_dir, 'bin')
+        
+        if os.path.exists(gs_source_dir):
+            logger.info('Copying Ghostscript binaries to portable directory')
+            os.makedirs(gs_target_dir, exist_ok=True)
+            for item in os.listdir(gs_source_dir):
+                source_path = os.path.join(gs_source_dir, item)
+                dest_path = os.path.join(gs_target_dir, item)
+                if os.path.isdir(source_path):
+                    shutil.copytree(source_path, dest_path, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(source_path, dest_path)
+        
+        # Create a launcher batch file that sets PATH before launching the app
+        exe_path = None
+        for root, _, files in os.walk(portable_dir):
+            for file in files:
+                if file.endswith('.exe') and not file.startswith('qpdf') and not file.startswith('gs'):
+                    exe_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(exe_path, portable_dir)
+                    break
+            if exe_path:
+                break
+        
+        if exe_path:
+            # Create launcher batch file
+            launcher_path = os.path.join(portable_dir, 'qpdftools.bat')
+            with open(launcher_path, 'w') as f:
+                f.write('@echo off\n')
+                f.write('setlocal\n')
+                f.write('set "SCRIPT_DIR=%~dp0"\n')
+                f.write('set "PATH=%SCRIPT_DIR%bin;%SCRIPT_DIR%;%PATH%"\n')
+                f.write('start "" "%SCRIPT_DIR%{}"\n'.format(rel_path))
+                f.write('endlocal\n')
+            logger.info(f'Created launcher batch file: {launcher_path}')
+        
         logger.info(f'Created portable package in directory: {portable_dir}')
         
         # Move GS installer to installers folder
