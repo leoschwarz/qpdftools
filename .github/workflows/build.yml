@@ -59,16 +59,28 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup flatpak and Flathub
-        run: |
-          sudo apt update
-          sudo apt install flatpak flatpak-builder
-          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-      - name: Pull Qpdf Tools Code
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Build using build.py with Flatpak
-        run: python3 build.py --platform linux --type release --flatpak
+      
+      - uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.2.4'
+          host: 'linux'
+          target: 'desktop'
+      
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake extra-cmake-modules ghostscript qpdf
+      
+      - name: Build and Package
+        run: python3 build.py --platform linux --type release --package
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: dist/
+          retention-days: 5

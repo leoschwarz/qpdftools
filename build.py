@@ -9,7 +9,6 @@ import shutil
 import logging
 from typing import List, Optional
 import zipfile
-import urllib.request
 
 # Configure logging
 logging.basicConfig(
@@ -29,8 +28,6 @@ def parse_arguments():
                         help='Create installation package')
     parser.add_argument('--portable', action='store_true',
                         help='Create portable package (Windows only)')
-    parser.add_argument('--flatpak', action='store_true',
-                        help='Build using Flatpak (Linux only)')
     args = parser.parse_args()
     
     # Determine platform
@@ -40,12 +37,12 @@ def parse_arguments():
     
     return args, target_platform
 
-def run_command(cmd: List[str], cwd: Optional[str] = None, shell=False, **kwargs) -> None:
+def run_command(cmd: List[str], cwd: Optional[str] = None) -> None:
     """Execute a command with proper logging and error handling."""
     cmd_str = ' '.join(cmd)
     logger.info(f'Running: {cmd_str}')
     try:
-        subprocess.run(cmd, check=True, cwd=cwd, shell=shell, **kwargs)
+        subprocess.run(cmd, check=True, cwd=cwd)
     except subprocess.CalledProcessError as e:
         logger.error(f'Command failed: {cmd_str}')
         logger.error(f'Error: {e}')
@@ -278,52 +275,9 @@ def organize_windows_build():
         logger.info('Removing existing qpdftools-windows-portable.zip as we now use the portable directory directly')
         os.remove('qpdftools-windows-portable.zip')
 
-def build_flatpak() -> None:
-    """Build the project using Flatpak."""
-    logger.info('Building with Flatpak')
-    
-    # Download the manifest from Flathub
-    manifest_url = "https://raw.githubusercontent.com/flathub/br.eng.silas.qpdftools/master/br.eng.silas.qpdftools.yml"
-    temp_manifest = "tmp.yml"
-    final_manifest = "br.eng.silas.qpdftools.yml"
-    
-    # Download manifest using standard library
-    logger.info(f'Downloading manifest from {manifest_url}')
-    try:
-        urllib.request.urlretrieve(manifest_url, temp_manifest)
-    except Exception as e:
-        logger.error(f'Failed to download manifest: {e}')
-        sys.exit(1)
-    
-    # Read the temporary manifest
-    with open(temp_manifest, 'r') as temp_file:
-        manifest_lines = temp_file.readlines()
-    
-    # Write manifest excluding the last 3 lines (which typically contain source information)
-    with open(final_manifest, 'w') as manifest_file:
-        # Write all but the last 3 lines
-        manifest_file.writelines(manifest_lines[:-3])
-        # Add local directory as source
-        manifest_file.write('      - type: dir\n')
-        manifest_file.write('        path: .\n')
-    
-    # Build and install the Flatpak
-    run_command(['flatpak-builder', '--install-deps-from=flathub', '--install', 'build-dir', final_manifest, '--force-clean'])
-    
-    # Cleanup temporary files
-    if os.path.exists(temp_manifest):
-        os.remove(temp_manifest)
-    
-    logger.info('Flatpak build completed')
-
 def package_project(args, build_dir: str, dist_dir: str, build_type: str, target_platform: str) -> None:
     """Package the project based on the requested package types."""
-    if not (args.package or args.portable or args.flatpak):
-        return
-    
-    # Handle Flatpak build separately
-    if args.flatpak and target_platform == 'linux':
-        build_flatpak()
+    if not (args.package or args.portable):
         return
     
     # Create and clean dist directory
