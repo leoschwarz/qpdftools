@@ -49,13 +49,13 @@ jobs:
           python build.py --platform windows --type release --package --portable
 
       - name: Upload Windows Installer
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: installers/*-installer.exe
           
       - name: Upload Windows Portable
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows-portable
           path: installers/*-portable.zip 
