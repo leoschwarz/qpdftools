@@ -47,14 +47,18 @@ jobs:
           $env:Qt6_DIR = "$env:IQTA_TOOLS/Qt/6.2.4/msvc2019_64/bin"
           
           python build.py --platform windows --type release --package --portable
-      
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v2
         with:
-          name: windows-build
-          path: |
-            installers/
-            portable/
-          retention-days: 5
+          name: windows-installer
+          path: installers/*-installer.exe
+          
+      - name: Upload Windows Portable
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-portable
+          path: installers/*-portable.zip 
   
   build-linux:
     runs-on: ubuntu-latest
