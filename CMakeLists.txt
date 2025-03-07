@@ -39,22 +39,32 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/silash35/qpdftools")
   set(CPACK_NSIS_DISPLAY_NAME "QPDFTools ${PROJECT_VERSION}")
   
-  # Enable custom NSIS script
-  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-    !include \\\"${CMAKE_SOURCE_DIR}/resources/windows/ghostscript_integration.nsh\\\"
-    Call CheckGhostscriptInstalled
-  ")
-  
-  # Add Ghostscript installer to package if it exists
+  # Include Ghostscript installer in the package if it exists
   if(EXISTS "${CMAKE_SOURCE_DIR}/gs-installer.exe")
     set(CPACK_PACKAGE_FILE_NAME "qpdftools-${PROJECT_VERSION}-windows-installer")
-    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-      !include \\\"${CMAKE_SOURCE_DIR}/resources/windows/ghostscript_integration.nsh\\\"
-      Call CheckGhostscriptInstalled
-    ")
-    
-    # Include Ghostscript installer in the package
     install(FILES "${CMAKE_SOURCE_DIR}/gs-installer.exe" DESTINATION ".")
+    
+    # Add a simpler, direct NSIS code instead of including a file
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+      ; Check for Ghostscript installation
+      IfFileExists 'C:\\\\Program Files\\\\gs\\\\bin\\\\gswin64c.exe' GSAlreadyInstalled
+        DetailPrint 'Installing Ghostscript...'
+        IfFileExists '$INSTDIR\\\\gs-installer.exe' 0 GSNotFound
+          ExecWait '\\\"$INSTDIR\\\\gs-installer.exe\\\" /S /D=C:\\\\Program Files\\\\gs'
+          Goto GSCheck
+        GSNotFound:
+          MessageBox MB_OK|MB_ICONEXCLAMATION 'Ghostscript installer not found. Please install Ghostscript manually.'
+      GSAlreadyInstalled:
+        DetailPrint 'Ghostscript is already installed.'
+      GSCheck:
+        IfFileExists 'C:\\\\Program Files\\\\gs\\\\bin\\\\gswin64c.exe' 0 GSInstallFailed
+        DetailPrint 'Ghostscript installation successful or already installed.'
+        Goto GSInstallEnd
+      GSInstallFailed:
+        DetailPrint 'Ghostscript installation failed.'
+        MessageBox MB_OK|MB_ICONEXCLAMATION 'Ghostscript installation failed. QPDFTools requires Ghostscript to function properly. Please install it manually.'
+      GSInstallEnd:
+    ")
   endif()
   
   include(CPack)
